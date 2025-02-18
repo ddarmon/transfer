@@ -1,0 +1,321 @@
+---
+title: "Sampling Properties of the Area Under the Curve (AUC) Estimator"
+author: "David Darmon"
+format:
+  revealjs:
+    incremental: true
+    scrollable: true
+    smaller: true
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(shiny)
+library(dplyr)
+library(ggplot2)
+library(glue)
+library(plotly)
+library(pROC)
+library(bslib)
+library(future)
+library(future.apply)
+library(MASS)
+
+# For best display in slides:
+options(htmltools.dir.version = FALSE)
+```
+
+# Introduction
+
+## Overview
+
+- **Goal**: Introduce the team to how the **AUC (Area Under the ROC Curve)** behaves as a **sample-based estimator**, and why treating it as a population parameter is important.
+- We'll also review:
+  - Variance formulas and **confidence intervals** from:
+    - Hanley & McNeil (1982)
+    - DeLong, DeLong, & Clarke-Pearson (1988)
+  - The impact of **few defaults** on sampling variability.
+- **Interactive demos** let you explore the effects of sample size, score distributions, and correlation on AUC uncertainty.
+
+<!-- ####################################################################### -->
+
+## Recall: AUC and Accuracy Ratio
+
+- **AUC** is the probability that a randomly chosen default scores higher than a randomly chosen non-default:
+  $$
+    \mathrm{AUC} = P(\text{score of default} > \text{score of non-default}).
+  $$
+- **Accuracy Ratio (AR)** is defined as:
+  $$
+    \mathrm{AR} = 2 \times \mathrm{AUC} - 1.
+  $$
+  - An AR of 0 corresponds to random rank-ordering, while an AR of 1 indicates perfect discrimination.
+
+<!-- ####################################################################### -->
+
+# Population Parameter vs. Sample Estimate
+
+## Why Think "Population Parameter"?
+
+- The AUC (or AR) is meant to reflect the **true model performance** over the entire population.
+- In practice, we only have a **sample**—often with very few defaults.
+- This leads to **statistical uncertainty** in the estimate:
+  - Variation in sample composition.
+  - Greater variability when defaults (positives) are scarce.
+
+<!-- ####################################################################### -->
+
+# Variance of the AUC Estimator
+
+## Hanley & McNeil (1982) Variance
+
+- The variance formula they provided is:
+  $$
+  \operatorname{Var}(\hat{\theta}) = \frac{1}{n_{1}n_{0}}\Bigl[\theta(1-\theta) + (n_{1}-1)(Q_{1,00}-\theta^{2}) + (n_{0}-1)(Q_{11,0}-\theta^{2})\Bigr].
+  $$
+- **Important Clarification**:
+  - **Exactness**:  
+    - When the true (population) values of $\theta$, $Q_{1,00}$, and $Q_{11,0}$ are used, this expression is *exact* for the variance of the Mann–Whitney AUC estimator.
+  - **Practical Application**:
+    - In real-world data, these quantities must be estimated, so the resulting variance estimate is an approximation.
+
+<!-- ####################################################################### -->
+  
+## Non-Vanishing Variance with Limited Defaults
+
+- Consider the exact variance of the AUC estimator (based on the Mann–Whitney U statistic):
+  $$
+  \operatorname{Var}(\hat{\theta}) = \frac{1}{n_{1}n_{0}}\Bigl[\theta(1-\theta) + (n_{1}-1)(Q_{1,00}-\theta^{2}) + (n_{0}-1)(Q_{11,0}-\theta^{2})\Bigr],
+  $$
+  where:
+  - $n_1$ = number of defaults (positives),
+  - $n_0$ = number of non-defaults (negatives),
+  - $\theta$ = true AUC,
+  - $Q_{1,00} = P(S^{1}_{1} > S^{0}_{1} \text{ and } S^{1}_{1} > S^{0}_{2})$,
+  - $Q_{11,0} = P(S^{1}_{1} > S^{0}_{1} \text{ and } S^{1}_{2} > S^{0}_{1})$.
+- **Key Observation**:
+  - When the number of defaults ($n_1$) is small and the number of non-defaults ($n_0$) increases, note that
+    $$
+    \operatorname{Var}(\hat{\theta}) \approx \frac{C_0}{n_{1}n_{0}} + \frac{Q_{11,0}-\theta^2}{n_1},
+    $$
+    so as $n_0\to\infty$, 
+    $$
+    \operatorname{Var}(\hat{\theta}) \to \frac{Q_{11,0}-\theta^2}{n_1}.
+    $$
+- **Implication**:  
+  - Even with an infinite number of non-defaults, the variance remains of order $1/n_1$.  
+  - This non-vanishing variance underscores that **the uncertainty in the AUC estimate is driven by the small number of events (defaults)**.
+
+<!-- ####################################################################### -->
+
+# DeLong Variance Estimator
+
+## Theoretical Formulation
+
+1. For each positive case $i$ and negative case $j$, define:
+   $$
+   V_i = \frac{1}{n_0} \sum_{j=1}^{n_0} \psi(S^1_i, S^0_j)
+   $$
+   $$
+   W_j = \frac{1}{n_1} \sum_{i=1}^{n_1} \psi(S^1_i, S^0_j)
+   $$
+   where
+   $$
+   \psi(S^1_i, S^0_j)=
+   \begin{cases}
+   1, & \text{if } S^1_i > S^0_j, \\
+   0.5, & \text{if } S^1_i = S^0_j, \\
+   0, & \text{if } S^1_i < S^0_j.
+   \end{cases}
+   $$
+2. The AUC estimator is:
+   $$
+   \hat{\theta} = \frac{1}{n_1} \sum_{i=1}^{n_1} V_i = \frac{1}{n_0} \sum_{j=1}^{n_0} W_j.
+   $$
+3. The variance estimator is then given by:
+   $$
+   \widehat{\operatorname{Var}}(\hat{\theta}) = \frac{1}{n_1}\hat{\sigma}_1^2 + \frac{1}{n_0}\hat{\sigma}_0^2,
+   $$
+   where
+   $$
+   \hat{\sigma}_1^2 = \frac{1}{n_1-1} \sum_{i=1}^{n_1} \Bigl(V_i - \hat{\theta}\Bigr)^2,\quad
+   \hat{\sigma}_0^2 = \frac{1}{n_0-1} \sum_{j=1}^{n_0} \Bigl(W_j - \hat{\theta}\Bigr)^2.
+   $$
+
+<!-- ####################################################################### -->
+
+# Normal Approximation and Confidence Intervals
+
+## Normal Approximation for AUC Confidence Intervals
+
+- **Idea**:  
+  For large samples, the sampling distribution of the AUC estimator ($\hat{\theta}$) can be approximated by a normal distribution:
+  $$
+    \hat{\theta} \sim N\Bigl(\theta, \operatorname{Var}(\hat{\theta})\Bigr).
+  $$
+- **Confidence Interval**:  
+  The $100(1-\alpha)\%$ confidence interval is given by:
+  $$
+    \hat{\theta} \pm z_{1-\alpha/2}\sqrt{\widehat{\operatorname{Var}}(\hat{\theta})},
+  $$
+  where $z_{1-\alpha/2}$ is the standard normal quantile.
+
+<!-- ####################################################################### -->
+
+## Confidence Interval via Hanley & McNeil (1982)
+
+- **Variance Estimation**:  
+  Hanley & McNeil propose:
+  $$
+  \operatorname{Var}(\hat{\theta}) = \frac{1}{n_{1}n_{0}}\left[\theta(1-\theta) + (n_{1}-1)(Q_{1,00}-\theta^{2}) + (n_{0}-1)(Q_{11,0}-\theta^{2})\right].
+  $$
+- **Normal Confidence Interval**:  
+  Using the estimated variance $\widehat{\operatorname{Var}}_{\text{HM}}$, the Confidence Interval becomes:
+  $$
+    \hat{\theta} \pm z_{1-\alpha/2}\sqrt{\widehat{\operatorname{Var}}_{\text{HM}}}.
+  $$
+- **Notes**:
+  - Estimation of $Q_{1,00}$ and $Q_{11,0}$ is required from the data.
+  - **Caveat**: When the number of defaults is small, the variance estimate is driven by $1/n_1$.
+
+<!-- ####################################################################### -->
+
+## Confidence Interval via DeLong et al. (1988)
+
+- **U-Statistic Based Variance**:  
+  Define:
+  $$
+  V_i = \frac{1}{n_0} \sum_{j=1}^{n_0} \psi(S^1_i, S^0_j), \quad W_j = \frac{1}{n_1} \sum_{i=1}^{n_1} \psi(S^1_i, S^0_j),
+  $$
+  with $\psi$ as defined earlier.
+- **Variance Estimate**:
+  $$
+  \widehat{\operatorname{Var}}(\hat{\theta}) = \frac{1}{n_1}\hat{\sigma}_1^2 + \frac{1}{n_0}\hat{\sigma}_0^2,
+  $$
+  where
+  $$
+  \hat{\sigma}_1^2 = \frac{1}{n_1-1} \sum_{i=1}^{n_1} (V_i - \hat{\theta})^2,\quad
+  \hat{\sigma}_0^2 = \frac{1}{n_0-1} \sum_{j=1}^{n_0} (W_j - \hat{\theta})^2.
+  $$
+- **Normal Confidence Interval**:  
+  The $100(1-\alpha)\%$ Confidence Interval is then:
+  $$
+    \hat{\theta} \pm z_{1-\alpha/2}\sqrt{\widehat{\operatorname{Var}}_{\text{Delong}}}.
+  $$
+- **Advantages**:
+  - Nonparametric and robust.
+  - Handles the paired structure naturally when comparing two AUCs.
+
+<!-- ####################################################################### -->
+
+## Implementation Considerations
+
+- **Sample Size & Default Count**:
+  - **Large $n_0$** helps reduce variance, but when defaults ($n_1$) are scarce, the overall variance remains of order $1/n_1$.
+- **Normality Assumption**:
+  - The normal approximation holds well when sample sizes are large.
+  - For very few defaults, the distribution of $\hat{\theta}$ may be skewed, leading to less reliable CIs.
+
+<!-- ####################################################################### -->
+
+# Shiny Demo: Single AUC
+
+## Exploring Single AUC Estimates
+
+- **Objective**: Examine the sampling distribution of the AR (or AUC) when the score distributions are defined via Beta distributions.
+- **Control Parameters**:
+  - Total sample size ($n$)
+  - Number of defaults ($d$)
+  - Beta distribution parameters for defaults and non-defaults.
+- **What to Observe**:
+  - The histogram of estimated AR values.
+  - The coverage of confidence intervals computed via the DeLong method.
+  - The impact of having **few defaults** on both bias and variability.
+
+<!-- ####################################################################### -->
+
+# Shiny Demo: Comparing Two AUCs
+
+## Paired AUC Differences
+
+- **Objective**: Compare two scoring models on the same sample (paired data).
+- **Control Parameters**:
+  - Total sample size and number of defaults.
+  - Beta distribution parameters for defaults and non-defaults for each model.
+  - The correlation $\rho$ between the two sets of scores.
+- **What to Observe**:
+  - The distribution of the difference in AR (or AUC) between the two models.
+  - How changing $\rho$ and the distribution parameters affects the confidence interval for the difference.
+
+<!-- ####################################################################### -->
+
+# Conclusions and References
+
+## Key Takeaways
+
+1. **AUC (and AR)** are measures of rank-ordering performance at the population level.
+2. **Finite-sample estimates** come with uncertainty, especially when defaults are few.
+   - With a fixed number of defaults, increasing non-default observations only partly reduces variance.
+   - The variance converges to a constant of order $\frac{1}{n_1}$, emphasizing the need for sufficient event counts.
+3. Two common variance estimation approaches:
+   - **Hanley & McNeil (1982)**:  
+     - Their variance formula is exact when using the true (population) parameters.
+     - In practice, we must estimate these quantities, so the variance is computed approximately.
+   - **DeLong et al. (1988)**: A nonparametric (U-statistic based) approach.
+4. For comparing models on the same sample, a **paired analysis** (via DeLong’s method) is recommended.
+
+<!-- ####################################################################### -->
+
+## Next Steps
+
+- Always report an **interval estimate** (or standard error) along with your AUC/AR estimates.
+- When comparing models, use a **paired approach** to account for correlation between scores.
+- Use the interactive demos to develop intuition about how sample size, distribution shape, and correlation impact AUC uncertainty.
+
+<!-- ####################################################################### -->
+
+## References
+
+- **Hanley, J. A., & McNeil, B. J. (1982).**  
+  The meaning and use of the area under a receiver operating characteristic (ROC) curve. *Radiology*, 143(1), 29–36.
+
+- **DeLong, E. R., DeLong, D. M., & Clarke-Pearson, D. L. (1988).**  
+  Comparing the areas under two or more correlated receiver operating characteristic curves: A nonparametric approach. *Biometrics*, 44(3), 837–845.
+  
+- **Xu, J. (2023).**
+  On the bias in the AUC variance estimate. *Pattern Recognition Letters*, 167, 1-8.
+  
+<!-- ####################################################################### -->
+
+# Appendix: Bias in DeLong et al.'s Variance Estimator
+
+## Bias in DeLong et al.'s Variance Estimator
+
+- Based on **Xu (2023).**
+
+- The DeLong variance estimator is based on the structural components of the AUC statistic.
+- The structural components are the average of the kernel function over all possible pairs of observations, where one observation is from the positive class and the other observation is from the negative class.
+- The DeLong variance estimator is the sum of the variances of the structural components.
+- The bias in the DeLong variance estimator is due to the fact that the structural components are not independent.
+- The bias is of the order $O(1/(n_0 n_1))$, where $n_1$ is the number of observations in the positive class and $n_0$ is the number of observations in the negative class.
+- The bias is always positive, which means that the DeLong variance estimator overestimates the true variance.
+- The bias is non-negligible for small sample sizes, but it diminishes quickly as the sample size increases.
+
+## Implications of the Bias
+
+- The bias in the DeLong variance estimator has implications for the interpretation of AUC estimates.
+- In particular, the bias can lead to overconfidence in the accuracy of AUC estimates.
+- This can be a problem when making decisions based on AUC estimates, such as when comparing the performance of different classifiers.
+
+## Recommendations
+
+- It is recommended to be aware of the bias in the DeLong variance estimator when interpreting AUC estimates.
+- For small sample sizes, it may be necessary to use a different variance estimator, such as the Hanley & McNeil estimator.
+- The Hanley & McNeil estimator is unbiased, but it is also more computationally expensive than the DeLong estimator.
+
+## Conclusion
+
+- The DeLong variance estimator is a biased estimator of the true variance of the AUC statistic.
+- The bias is always positive and it is non-negligible for small sample sizes.
+- It is recommended to be aware of the bias when interpreting AUC estimates.
+- For small sample sizes, it may be necessary to use a different variance estimator.
