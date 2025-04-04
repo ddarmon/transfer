@@ -1,0 +1,297 @@
+---
+title: "scratch"
+date: "230325"
+format: pdf
+editor_options:
+  markdown:
+    wrap: 80
+    canonical: true
+---
+
+What paper first introduced the concept of, for a given directed acyclic graph
+(DAG),
+
+-   constructing the partially directed graph obtained by removing all of its
+    arrowheads that are not part of a v-structure
+    -   they called this the rudimentary pattern of the causal model
+-   adding all arrowheads back that do not induce additional v-structures
+    -   they called this the completed pattern of the rudimentary pattern
+
+?
+
+T. Verma and J. Pearl, in *Uncertainty in Artificial Intelligence: Proceedings
+of the Sixth Conference*, edited by M. Henrion, R. Shachter, L. Kanal, and J.
+Lemmer (Morgan Kaufman, San Francisco, 1990), pp. 220–227.
+
+**Reference:** Research/2025/bg/29-cpdag
+
+--------------------------------------------------------------------------------
+
+Conceptually, what is the algorithm for constructing the completed partially
+directed graph (CPDAG) from a DAG?
+
+1.  Construct the partially directed graph (PDAG) by removing all arrowheads
+    that are not part of a v-structure.
+2.  Construct the CPDAG by adding all arrowheads back that do not induce
+    additional v-structures.
+
+**Figure:**
+
+**Reference:**
+
+T. Verma and J. Pearl, "Equivalence and Synthesis of Causal Models," in
+*Uncertainty in Artificial Intelligence: Proceedings of the Sixth Conference*,
+edited by M. Henrion, R. Shachter, L. Kanal, and J. Lemmer (Morgan Kaufmann, San
+Francisco, 1990), pp. 220–227.
+
+**Reference:** Research/2025/bg/29-cpdag
+
+--------------------------------------------------------------------------------
+
+In what sense is a completed partially directed acyclic graph (CPDAG)
+"completed"?
+
+It is "completed" in the sense that **all** arrowheads that do not induce
+additional v-structures are added back to the partially directed graph (PDAG).
+
+**Reference:** Research/2025/bg/29-cpdag
+
+--------------------------------------------------------------------------------
+
+Are the partially directed graphs (PDAGs) associated with a DAG unique?
+
+The completed partially directed graphs (CPDAGs)?
+
+There are multiple PDAGs associated with a DAG.
+
+There is a unique CPDAG associated with a DAG.
+
+**Reference:** Research/2025/bg/29-cpdag
+
+--------------------------------------------------------------------------------
+
+What can be considered as the representative of the Markov equivalence class for
+a given DAG?
+
+The completed partially directed acyclic graph (CPDAG) associated with that DAG,
+since there is one and only one CPDAG that represents the Markov equivalence
+class of a DAG.
+
+-   All DAGs in the Markov equivalence class have the same CPDAG.
+
+**Reference:** Research/2025/bg/29-cpdag
+
+--------------------------------------------------------------------------------
+
+What is the genealogy of the concept of a completed partially directed acyclic
+graph (CPDAG)?
+
+-   Verma and Pearl introduced the idea in 1990.
+-   Chickering used the same idea in 1995, and called them completed partially
+    directed acyclic graphs.
+-   Andersson, Madigan, and Perlman used the same idea in 1997, calling them the
+    essential graph for the DAG.
+
+**References:**
+
+1.  T. Verma and J. Pearl, "Equivalence and Synthesis of Causal Models," in
+    *Uncertainty in Artificial Intelligence: Proceedings of the Sixth
+    Conference*, edited by M. Henrion, R. Shachter, L. Kanal, and J. Lemmer
+    (Morgan Kaufmann, San Francisco, 1990), pp. 220–227.
+
+2.  D. M. Chickering, "A Transformational Characterization of Equivalent
+    Bayesian Network Structures," in *Proceedings of the Eleventh Conference on
+    Uncertainty in Artificial Intelligence (UAI-95)* (Morgan Kaufmann, San
+    Francisco, 1995), pp. 87–98.
+
+3.  S. A. Andersson, D. Madigan, and M. D. Perlman, "A Characterization of
+    Markov Equivalence Classes for Acyclic Digraphs," *Ann. Stat.* **25**,
+    505–541 (1997).
+
+**Reference:** Research/2025/bg/29-cpdag
+
+--------------------------------------------------------------------------------
+
+What reference gives an algorithm for constructing a completed partially
+directed graph (CPDAG) from a DAG?
+
+D. M. Chickering, Learning Equivalence Classes of Bayesian-Network Structures,
+Journal of Machine Learning Research **2**, 445 (2002).
+
+**Reference:** Research/2025/bg/29-cpdag
+
+--------------------------------------------------------------------------------
+
+What paper gives an algorithm for constructing the interventional essential
+graph for a given directed acyclic graph (DAG) under a set of target
+interventions?
+
+i.e. this paper gives an algorithm for constructing the interventional
+equivalent of the completed partially directed graph (CPDAG).
+
+A. Hauser and P. Bühlmann, Characterization and greedy learning of
+interventional markov equivalence classes of directed acyclic graphs, The
+Journal of Machine Learning Research **13**, 2409 (2012).
+
+**Reference:** Research/2025/bg/29-cpdag
+
+--------------------------------------------------------------------------------
+
+How are completed partially directed graphs (CPDAG) useful when considering a
+particular candidate causal DAG for a system?
+
+You can construct all of the other causal DAGs that are observationally
+equivalent to the candidate DAG by considering the CPDAG.
+
+You can then try to tell the "causal story" for each of those DAGs and see if
+they make more or less sense than the original candidate DAG.
+
+**Reference:** Research/2025/bg/29-cpdag
+
+--------------------------------------------------------------------------------
+
+What causal discovery algorithms does the {pcalg} package include as of
+September 2024?
+
+### Constraint-based Methods:
+
+-   **PC algorithm** (`pc()`): Assumes no hidden confounders.
+-   **FCI algorithm** (`fci()`): Allows for hidden and selection variables.
+-   **RFCI algorithm** (`rfci()`): A faster approximation of FCI, allows hidden
+    variables.
+-   **FCI+ algorithm** (`fciPlus()`): Improved version of FCI, polynomial
+    complexity for sparse graphs.
+
+### Score-based Methods:
+
+-   **GES algorithm** (`ges()`): Greedy Equivalence Search assuming no hidden
+    confounders.
+-   **GIES algorithm** (`gies()`): Greedy Interventional Equivalence Search for
+    interventional data.
+-   **Simy algorithm** (`simy()`): Dynamic programming approach for
+    interventional data (exact but computationally intensive).
+
+### Hybrid Methods:
+
+-   **ARGES algorithm** (implemented via `ges()` with the `adaptive` argument):
+    Adaptively restricted version of GES combining constraint-based and
+    score-based approaches.
+
+### Restricted Structural Equation Models:
+
+-   **LiNGAM algorithm** (`lingam()`): Linear Non-Gaussian Acyclic Model,
+    identifying causal structure with non-Gaussian distributions.
+
+**Reference:** The vignette from CRAN:
+
+<https://cran.r-project.org/web/packages/pcalg/index.html>
+
+**Reference:** Research/2025/bg/29-cpdag
+
+--------------------------------------------------------------------------------
+
+```{r, include=FALSE}
+library(pcalg)
+library(Rgraphviz)
+library(DiagrammeR)
+library(dplyr)
+```
+
+```{r, include=FALSE}
+source("functions.R")
+```
+
+```{r}
+## A -> B <- C
+am1 <- matrix(c(0,1,0, 0,0,0, 0,1,0), 3, 3)
+colnames(am1) <- rownames(am1) <- LETTERS[1:3]
+g1 <- as(t(am1), "graphNEL") ## convert to graph
+cpdag1 <- dag2cpdag(g1)
+
+par(mfrow = c(1, 2))
+plot(g1)
+plot(cpdag1)
+```
+
+```{r}
+## A -> B -> C
+am2 <- matrix(c(0,1,0, 0,0,1, 0,0,0), 3, 3)
+colnames(am2) <- rownames(am2) <- LETTERS[1:3]
+g2 <- as(t(am2), "graphNEL") ## convert to graph
+cpdag2 <- dag2cpdag(g2)
+
+par(mfrow = c(1, 2))
+plot(g2)
+plot(cpdag2)
+```
+
+--------------------------------------------------------------------------------
+
+-   E - Education
+-   R - Neighborhood
+-   I - Income
+-   C - Commute Length
+-   H - Health
+
+```{r}
+# Define the adjacency matrix for the DAG:
+# Variables: E (Education), R (Neighborhood), I (Income), C (Commute), H (Health)
+# Directed edges:
+#   E -> R, E -> I, R -> C, I -> H, C -> H
+am <- matrix(0, 5, 5)
+colnames(am) <- rownames(am) <- c("E", "R", "I", "C", "H")
+
+am["E", "R"] <- 1  # Education influences Neighborhood
+am["E", "I"] <- 1  # Education influences Income
+am["R", "C"] <- 1  # Neighborhood influences Commute
+am["I", "H"] <- 1  # Income influences Health
+am["C", "H"] <- 1  # Commute influences Health
+
+# Convert matrix to a graphNEL object (required by pcalg functions)
+g <- as(am, "graphNEL")
+
+# Generate the CPDAG (Completed Partially Directed Acyclic Graph)
+cpdag <- dag2cpdag(g)
+
+# Plot the original DAG and its CPDAG side by side
+par(mfrow = c(1, 2))
+plot(g, main = "Original DAG")
+plot(cpdag, main = "CPDAG")
+```
+
+```{r}
+# Convert the original DAG and CPDAG to Mermaid code.
+mermaid_dag <- graphNEL_to_mermaid(g)
+mermaid_cpdag <- graphNEL_to_mermaid(cpdag)
+
+# Print the Mermaid code.
+cat("Mermaid code for the Original DAG:\n")
+cat(mermaid_dag, "\n\n")
+cat("Mermaid code for the CPDAG:\n")
+cat(mermaid_cpdag, "\n")
+```
+
+```{r}
+DiagrammeR::mermaid(mermaid_dag)
+DiagrammeR::mermaid(mermaid_cpdag)
+```
+
+```{r}
+all_dags <- cpdag %>%
+  cpdag_to_adj() %>%
+  structure(., class = "amat") %>%
+  pdag2allDags()
+
+all_dags
+```
+
+```{r}
+all_mermaids <- allDags_to_mermaid(all_dags)
+
+for (dag in all_mermaids) {
+  cat(dag)
+  cat("\n\n")
+  
+  print(DiagrammeR::mermaid(dag))
+}
+```
